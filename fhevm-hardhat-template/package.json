@@ -86,6 +86,7 @@
     "task:getEthereumAddress": "hardhat task:getEthereumAddress",
     "task:deployERC20": "hardhat task:deployERC20",
     "task:accounts": "hardhat task:accounts",
+    "task:mintERC20": "hardhat task:mintERC20",
     "fhevm:start": "make init-ethermint-node && make run-full && ./scripts/fund_test_addresses_docker.sh && ./launch-fhevm.sh",
     "fhevm:stop": "make clean",
     "fhevm:restart": "fhevm:stop && fhevm:start",

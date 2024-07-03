@@ -14,6 +14,7 @@ import CustomProvider from "./CustomProvider";
 import "./tasks/accounts";
 import "./tasks/deployERC20";
 import "./tasks/getEthereumAddress";
+import "./tasks/mintERC20";
 import "./tasks/taskDeploy";
 import "./tasks/taskGatewayRelayer";
 import "./tasks/taskTFHE";

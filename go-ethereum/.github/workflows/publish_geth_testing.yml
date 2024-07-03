@@ -1,0 +1,64 @@
+name: Run go-ethereum unit tests
+
+on:
+  push:
+    branches: [ "1.10.19-zama" ]
+  pull_request:
+    branches: [ "1.10.19-zama" ]
+
+jobs:
+  build_and_test:
+    name: Build and test go-ethereum
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout TFHE-rs
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/tfhe-rs
+          ref: 0.3.1
+          path: tfhe-rs
+
+      - name: Checkout zbc-fhe-tool
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/fhevm-tfhe-cli
+          ref: main
+          token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+          path: zbc-fhe-tool
+
+      - name: Checkout go-ethereum
+        uses: actions/checkout@v3
+        with:
+          path: go-ethereum
+
+      - name: Build C API
+        working-directory: ./tfhe-rs
+        run: make build_c_api_experimental_deterministic_fft
+
+      - name: Move library files
+        run: |
+          sudo mv ./tfhe-rs/target/release/tfhe.h /usr/include
+          sudo mv ./tfhe-rs/target/release/libtfhe.so /usr/lib/
+
+      - name: Generate TFHE-rs keys
+        working-directory: ./zbc-fhe-tool
+        run: |
+          mkdir -p $HOME/.evmosd/zama/keys/network-fhe-keys
+          cargo run --features tfhe/x86_64-unix --release -- generate-keys -d $HOME/.evmosd/zama/keys/network-fhe-keys
+
+      - name: Run tests
+        working-directory: ./go-ethereum/core/vm
+        run: go test -v
+
+      - name: Run e2e tests in evmos with current branch
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          SECRET_TOKEN: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+        run: |
+          curl -L -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $SECRET_TOKEN" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/zama-ai/evmos/actions/workflows/ci_e2e_test.yml/dispatches \
+          -d '{"ref":"v9.1.0-zama","inputs":{"geth_commit":"${{ github.event.pull_request.head.sha }}"}}'

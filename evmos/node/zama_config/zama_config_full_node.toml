@@ -1,0 +1,4 @@
+[oracle]
+mode = "node"
+oracle_db_address = "http://13.37.31.214:8001"
+require_retry_count = 1

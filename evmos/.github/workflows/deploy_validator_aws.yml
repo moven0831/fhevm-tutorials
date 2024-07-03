@@ -1,0 +1,182 @@
+name: Deploy validator on Aws
+
+on:
+  workflow_dispatch:
+    inputs:
+      evmos_node_tag:
+        description: 'Evmos node image tag (default: latest)'
+        default: 'latest'
+        type: string
+        required: false
+      oracle_db_service_tag:
+        description: 'Oracle Db service image tag (default: latest)'
+        default: 'latest'
+        type: string
+        required: false
+      clean:
+        description: 'Clean docker related components  (default: true, false only for first deployment)'
+        default: true
+        type: boolean
+        required: false
+      run_test:
+        description: 'Run e2e test after deployment  (default: true)'
+        default: true
+        type: boolean
+        required: false
+
+
+jobs:
+  clean_instance:
+    name: Clean docker related components
+    runs-on: zbc-testnet
+    if: ${{ inputs.clean }}
+    steps:
+      - name: Stop docker compose
+        working-directory: ./evmos
+        run: |
+          docker compose -f docker-compose/docker-compose.validator.yml  down
+
+      - name: Clean all docker related image, cache, container ...
+        working-directory: ./evmos
+        run: |
+          docker system prune -af
+
+  push_to_registry:
+    if: ${{ always() }}
+    name: Deploy new version of zbc testnet
+    needs: clean_instance
+    runs-on: zbc-testnet
+    env:
+      EVMOS_NODE_TAG: ${{ inputs.evmos_node_tag }}
+      ORACLE_DB_SERVICE_TAG: ${{ inputs.oracle_db_service_tag }}
+    steps:
+      - name: Echo user parameters 
+        run: |
+          echo "evmos_node_tag: ${{ inputs.evmos_node_tag }}"
+          echo "oracle_db_service_tag: ${{ inputs.oracle_db_service_tag }}"
+          echo "clean: ${{ inputs.clean }}"
+          
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@v1.1.0
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: evmos      
+
+
+      - name: Get version for all needed repositories
+        working-directory: ./evmos
+        run: |
+          echo "FHEVM_TFHE_CLI_VERSION=$(./scripts/get_version_from_makefile.sh FHEVM_TFHE_CLI_VERSION)" >> $GITHUB_ENV
+          
+      - name: Echo versions parsed from Makefile and go.mod
+        run: |
+          echo "FHEVM_TFHE_CLI_VERSION: $FHEVM_TFHE_CLI_VERSION"
+
+      - name: Checkout fhevm-tfhe-cli
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/fhevm-tfhe-cli
+          token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+          path: ./evmos/work_dir/fhevm-tfhe-cli
+          ref: ${{ env.FHEVM_TFHE_CLI_VERSION }}
+
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-3
+
+      - name: Download keys from S3
+        working-directory: ./evmos
+        env:
+          AWS_S3_BUCKET: zbc-testnet
+        run: |
+          aws s3 ls s3://${AWS_S3_BUCKET}
+          ./scripts/prepare_volumes_validator_ci.sh
+
+      - name: Prepare files for node setup
+        working-directory: ./evmos
+        run: |
+          mkdir -p node/evmos
+          cp ../evmos/private.ed25519 node/evmos 
+          cp ../evmos/public.ed25519 node/evmos 
+          touch vm.log
+          ls node/evmos
+
+      - name: List files in volumes
+        working-directory: ./evmos
+        run: |
+          ls volumes
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Prepare evmos node aka run setup.sh
+        working-directory: ./evmos
+        run: |
+          docker compose -f docker-compose/docker-compose.validator.yml run validator bash /config/setup.sh
+      
+
+      - name: Check running node owner and change it 
+        working-directory: ./evmos
+        run: |
+          ls -all .
+          sudo chown -R $USER: running_node/
+
+      - name: Prepare keys
+        working-directory: ./evmos
+        run: |
+          ./scripts/prepare_validator_ci.sh
+      
+      - name: Start whole testnet
+        working-directory: ./evmos
+        run: |
+          docker compose  -f docker-compose/docker-compose.validator.yml -f docker-compose/docker-compose.validator.override.yml  up --detach
+
+      - name: Check running docker
+        run: |
+          docker ps
+
+      - name: Sleep for 3 seconds to ensure validtor is running
+        run: |
+          sleep 10s
+          
+      - name: List files in fhevm-tfhe-cli
+        working-directory: evmos/work_dir/fhevm-tfhe-cli
+        run: |
+          ls
+
+      - name: Upload genesis and node_id to S3 bucket to allow other nodes to sync
+        working-directory: ./evmos
+        env:
+          AWS_S3_BUCKET: zbc-testnet
+        run: |
+          aws s3 ls s3://${AWS_S3_BUCKET}/
+          ./scripts/upload_genesis.sh
+
+      - name: Prepare/download fhe keys
+        working-directory: evmos/work_dir/fhevm-tfhe-cli
+        run: |
+          ./ci/scripts/prepare_fhe_keys_ci.sh
+
+      - name: Install @openzeppelin/contracts
+        working-directory: evmos/work_dir/fhevm-tfhe-cli
+        run: |
+          npm install @openzeppelin/contracts
+
+      - name: Run e2e test from zbc-solidty
+        if: ${{ inputs.run_test }}
+        working-directory: evmos/work_dir/fhevm-tfhe-cli
+        run: |
+          ./ci/scripts/run_ERC20_ci_test.sh mykey1 ../../

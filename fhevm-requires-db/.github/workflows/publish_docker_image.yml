@@ -1,0 +1,70 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# GitHub recommends pinning actions to a commit SHA.
+# To get a newer version, you will need to update the SHA.
+# You can also reference a tag or branch, but the action may change without warning.
+
+name: Publish fhevm-decryptions-db image
+
+on: 
+  workflow_dispatch:
+    inputs:
+      fhevm_decryptions_db_tag:
+        description: 'fhevm-decryptions-db tag (default: latest)'
+        default: "latest"
+        type: string
+        required: true
+      refToBuildFhevmDecryptionsDb:
+        description: 'Branch, tag or commit SHA1 to checkout fhevm-decryptions-db'
+        required: true
+        default: "main"
+        type: string
+      refToDockerfileFhevmDecryptionsDb:
+        description: 'Branch, tag or commit SHA1 to checkout fhevm-decryptions-db (Dockerfile)'
+        required: true
+        default: "main"
+        type: string
+
+env:
+  DOCKER_IMAGE: ghcr.io/zama-ai/fhevm-decryptions-db
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to GitHub Container Registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo for build
+        uses: actions/checkout@v3
+        with:
+          path: fhevm-decryptions-db
+          ref: ${{ inputs.refToBuildFhevmDecryptionsDb }}
+      - name: Check out the repo for build
+        uses: actions/checkout@v3
+        with:
+          path: fhevm-decryptions-db-dockerfile
+          ref: ${{ inputs.refToDockerfileFhevmDecryptionsDb }}
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4c0219f9ac95b02789c1075625400b2acbff50b1
+        with:
+          platforms: linux/amd64,linux/arm64
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          platforms: linux/amd64,linux/arm64
+          context: ./fhevm-decryptions-db
+          file: ./fhevm-decryptions-db-dockerfile/Dockerfile
+          push: true
+          tags: ${{ env.DOCKER_IMAGE }}:${{ inputs.fhevm_decryptions_db_tag }},${{ env.DOCKER_IMAGE }}:latest
+          labels: fhevm-decryptions-db

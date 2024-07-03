@@ -1,0 +1,15 @@
+[default]
+address = "0.0.0.0"
+port = 8001
+max_expected_oracle_delay_ms = 7000
+log_level = "debug"
+
+[debug]
+db_path = "/tmp/zbc-oracle-db-contents"
+
+[release]
+db_path = "/var/zbc-oracle-db-contents"
+
+[testing]
+db_path = "/tmp/zbc-oracle-db-testing"
+max_expected_oracle_delay_ms = 2

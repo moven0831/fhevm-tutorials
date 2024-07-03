@@ -1,0 +1,169 @@
+name: Run ci e2e test
+
+on:
+  push:
+    branches:
+    - v9.1.0-zama
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - ready_for_review
+  # this is useful to trigger test from PRs, or even manually with specific commits/tags
+  workflow_dispatch:
+    inputs:
+      geth_commit:
+        description: "go-ethereum commit/tag to use"
+        type: string
+        default: ''
+        required: false
+      ethermint_commit:
+        description: "ethermint commit/tag to use"
+        type: string
+        default: ''
+        required: false
+      fhevm_solidity_commit:
+        description: "fhevm_solidity commit/tag to use"
+        type: string
+        default: ''
+        required: false
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || !github.event.pull_request.draft }}
+    env:
+      ORACLE_DB_SERVICE_TAG: latest
+    steps:
+      - name: Install Node.js and npm
+        run: |
+          sudo apt update
+          sudo apt install nodejs
+          sudo apt install npm
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: evmos
+
+      - name: Get version for all needed repositories
+        working-directory: ./evmos
+        run: |
+          echo "TFHE_RS_VERSION=$(./scripts/get_version_from_makefile.sh TFHE_RS_VERSION)" >> $GITHUB_ENV
+          echo "FHEVM_TFHE_CLI_VERSION=$(./scripts/get_version_from_makefile.sh FHEVM_TFHE_CLI_VERSION)" >> $GITHUB_ENV
+          echo "FHEVM_SOLIDITY_VERSION=$(./scripts/get_version_from_makefile.sh FHEVM_SOLIDITY_VERSION)" >> $GITHUB_ENV
+          echo "ETHERMINT_VERSION=$(./scripts/get_module_version.sh go.mod zama.ai/ethermint)" >> $GITHUB_ENV
+          echo "GO_ETHEREUM_VERSION=$(./scripts/get_module_version.sh go.mod zama.ai/go-ethereum)" >> $GITHUB_ENV
+
+      # this overrides the previous geth version
+      - name: Set go-ethereum version if specified
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.geth_commit != ''
+        run: echo "GO_ETHEREUM_VERSION=${{ github.event.inputs.geth_commit }}" >> $GITHUB_ENV
+
+      # this overrides the previous ethermint version
+      - name: Set ethermint version if specified
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.ethermint_commit != ''
+        run: echo "ETHERMINT_VERSION=${{ github.event.inputs.ethermint_commit }}" >> $GITHUB_ENV
+
+      # this overrides the previous fhevm_solidity version
+      - name: Set fhevm_solidity version if specified
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.fhevm_solidity_commit != ''
+        run: echo "FHEVM_SOLIDITY_VERSION=${{ github.event.inputs.fhevm_solidity_commit }}" >> $GITHUB_ENV
+          
+      - name: Echo versions parsed from Makefile and go.mod
+        run: |
+          echo "TFHE_RS_VERSION: $TFHE_RS_VERSION"
+          echo "FHEVM_TFHE_CLI_VERSION: $FHEVM_TFHE_CLI_VERSION"
+          echo "FHEVM_SOLIDITY_VERSION: $FHEVM_SOLIDITY_VERSION"
+          echo "ETHERMINT_VERSION: $ETHERMINT_VERSION"
+          echo "GO_ETHEREUM_VERSION: $GO_ETHEREUM_VERSION"
+      
+
+      - name: Checkout fhevm-solidity
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/fhevm-solidity
+          token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+          path: ./evmos/work_dir/fhevm-solidity
+          ref: ${{ env.FHEVM_SOLIDITY_VERSION }}
+
+      - name: Checkout tfhe-rs
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/tfhe-rs
+          token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+          path: ./evmos/work_dir/tfhe-rs
+          ref: ${{ env.TFHE_RS_VERSION }}
+
+      - name: Checkout fhevm-tfhe-cli
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/fhevm-tfhe-cli
+          token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+          path: ./evmos/work_dir/fhevm-tfhe-cli
+          ref: ${{ env.FHEVM_TFHE_CLI_VERSION }}
+
+      - name: Checkout go-ethereum
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/go-ethereum
+          token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+          path: ./evmos/work_dir/go-ethereum
+          ref: ${{ env.GO_ETHEREUM_VERSION }}
+
+      - name: Checkout ethermint
+        uses: actions/checkout@v3
+        with:
+          repository: zama-ai/ethermint
+          token: ${{ secrets.CONCRETE_ACTIONS_TOKEN }}
+          path: ./evmos/work_dir/ethermint
+          ref: ${{ env.ETHERMINT_VERSION }}
+
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+
+      - name: List files in work_dir
+        working-directory: evmos/work_dir
+        run: |
+          ls 
+
+      - name: Prepare files for node setup
+        working-directory: evmos
+        run: |
+          mkdir -p node/evmos
+          cp private.ed25519 node/evmos 
+          cp public.ed25519 node/evmos 
+          touch vm.log
+          ls node/evmos
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@49ed152c8eca782a232dede0303416e8f356c37b
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build local docker 
+        working-directory: ./evmos
+        run: |
+          make build-docker
+
+      - name: Check docker images
+        working-directory: ./evmos
+        run: |
+          docker images
+
+      - name: Install @openzeppelin/contracts
+        working-directory: evmos/work_dir/fhevm-solidity
+        run: |
+          npm install @openzeppelin/contracts
+
+      - name: Run e2e test
+        working-directory: ./evmos
+        run: |
+          ls ${{ github.workspace }}
+          ls work_dir
+          ls work_dir/fhevm-tfhe-cli
+          make e2e-test

@@ -14,15 +14,15 @@ While the official website offers numerous references, the content is often divi
 
 ## Content
 
-1. **Understanding fhEVM**: 
+1. [**Understanding fhEVM**](https://github.com/moven0831/fhevm-tutorials/blob/main/docs/chapter-1-concepts.md): 
     - **Overview**: Get a comprehensive understanding of the fhEVM protocol, its architecture, and key concepts.
    - **FHE and Blockchain**: Learn how FHE enhances privacy and security in blockchain applications.
 
-2. **Integrating FHE Functionalities**: 
+2. [**Integrating FHE Functionalities**](https://github.com/moven0831/fhevm-tutorials/blob/main/docs/chapter-2-local-build.md): 
    - **Setup Environment**: Step-by-step instructions to set up your development environment.
    - **Upgrade EVM-compatible Blockchain**: Detailed guide on integrating FHE functionalities into an EVM-compatible blockchain.
 
-3. **Developing Confidential Smart Contracts**: 
+3. [**Developing Confidential Smart Contracts**](https://github.com/moven0831/fhevm-tutorials/blob/main/docs/chapter-3-fhevm-contract.md): 
    - **Writing Contracts**: Learn how to write confidential smart contracts that can compute on encrypted data.
    - **Compilation and Deployment**: Step-by-step guide to compiling and deploying your contracts on fhEVM.
    - **Interacting with Contracts**: Instructions on how to interact with your deployed contracts, including reading and writing on-chain data.

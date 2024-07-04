@@ -1,7 +1,6 @@
-# fhEVM tutorials
+# fhEVM tutorials - Develop your own confidential contracts
 
-Welcome to the fhEVM tutorial series! This guide is designed for first-time users looking to explore and develop their own smart contracts on fhEVM. If you're already familiar with the concepts of fhEVM, feel free to dive into this tutorial to quickly learn how to develop on the fhEVM codebase.
-
+This guide is designed for first-time users looking to explore and develop their own smart contracts on fhEVM. If you're already familiar with the concepts of fhEVM, feel free to dive into this tutorial to quickly learn how to develop on the fhEVM codebase.
 
 ## Tutorial Goals
 
@@ -9,11 +8,9 @@ Welcome to the fhEVM tutorial series! This guide is designed for first-time user
 - **Explore Confidential Smart Contracts**: Discover how confidential smart contracts can perform computations on encrypted data.
 - **Hands-on Development**: Gain practical experience in developing, deploying, and interacting with custom confidential smart contracts.
 
+### Why This Tutorial?
 
-## Why This Tutorial?
-
-While there are numerous references available on the official website, the content is often divided by functionalities (e.g., starting a local node and testing your own smart contract on fhEVM are separate). This can be overwhelming for beginners, leading to confusion and potentially giving up. This tutorial aims to consolidate all the valuable resources provided by the Zama team, presenting them with a clear goal: writing, compiling, deploying, and interacting with your own confidential smart contract. This approach helps beginners not only understand the protocol concepts but also develop practical skills from scratch, reinforcing what they've learned from the documentation.
-
+While the official website offers numerous references, the content is often divided by functionalities (e.g., starting a local node and testing your own smart contract on fhEVM are separate). This could be overwhelming for beginners, leading to confusion and potentially giving up. This tutorial aims to consolidate all the valuable resources provided by the Zama team, presenting them with a clear goal: writing, compiling, deploying, and interacting with your own confidential smart contract. So that it not only helps people understand the protocol concepts but also develop practical skills from scratch, reinforcing what they've learned from the documentation.
 
 ## Content
 
@@ -29,7 +26,6 @@ While there are numerous references available on the official website, the conte
    - **Writing Contracts**: Learn how to write confidential smart contracts that can compute on encrypted data.
    - **Compilation and Deployment**: Step-by-step guide to compiling and deploying your contracts on fhEVM.
    - **Interacting with Contracts**: Instructions on how to interact with your deployed contracts, including reading and writing on-chain data.
-
 
 ## References
 

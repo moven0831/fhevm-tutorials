@@ -10,11 +10,13 @@ This guide is designed for first-time users looking to explore and develop their
 
 ### Why This Tutorial?
 
-While the official website offers numerous references, the content is often divided by functionalities (e.g., starting a local node and testing your own smart contract on fhEVM are separate). This could be overwhelming for beginners, leading to confusion and potentially giving up. This tutorial aims to consolidate all the valuable resources provided by the Zama team, presenting them with a clear goal: writing, compiling, deploying, and interacting with your own confidential smart contract. So that it not only helps people understand the protocol concepts but also develop practical skills from scratch, reinforcing what they've learned from the documentation.
+While the official website offers numerous references, the content is often divided by functionalities (e.g., starting a local node and testing your own smart contract on fhEVM are separate). This could be overwhelming for beginners, leading to confusion and potentially giving up.
+
+This tutorial aims to consolidate all the valuable resources provided by the Zama team, presenting them with a clear goal: writing, compiling, deploying, and interacting with your own confidential smart contract. So that it not only helps people understand the protocol concepts but also develop practical skills from scratch, reinforcing what they've learned from the documentation.
 
 ## Content
 
-1. [**Understanding fhEVM**](https://github.com/moven0831/fhevm-tutorials/blob/main/docs/chapter-1-concepts.md): 
+1. [**Understanding the concepts of fhEVM**](https://github.com/moven0831/fhevm-tutorials/blob/main/docs/chapter-1-concepts.md): 
     - **Overview**: Get a comprehensive understanding of the fhEVM protocol, its architecture, and key concepts.
    - **FHE and Blockchain**: Learn how FHE enhances privacy and security in blockchain applications.
 

@@ -2,6 +2,9 @@
 
 This guide is designed for first-time users looking to explore and develop their own smart contracts on fhEVM. If you're already familiar with the concepts of fhEVM, feel free to dive into this tutorial to quickly learn how to develop on the fhEVM codebase.
 
+> [!TIP]
+> We highly recommend switching to the [start-from-here](https://github.com/moven0831/fhevm-tutorials/tree/start-from-here) branch to enjoy a journey from scratch.
+
 ## Tutorial Goals
 
 - **Understand FHE Integration**: Learn how to integrate Fully Homomorphic Encryption (FHE) functionalities into an EVM-compatible blockchain.
